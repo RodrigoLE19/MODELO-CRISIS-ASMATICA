@@ -2,6 +2,7 @@ import pickle
 import os
 import pandas as pd
 import numpy as np
+import time
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,11 +37,11 @@ async def add_evaluation_user(request: Request):
     req_data = await request.json()  # Obtener el cuerpo de la solicitud
 
     # DATOS PARA USAR CON FLUTTER
-    BMI=req_data.get('BMI')
-    Wheezing=req_data.get('Wheezing')
-    ShortnessOfBreath=req_data.get('ShortnessOfBreath')
-    ChestTightness=req_data.get('ChestTightness')
-    Coughing=req_data.get('Coughing')
+    BMI=req_data.get('questionIMC')
+    Wheezing=req_data.get('questionWheezing')
+    ShortnessOfBreath=req_data.get('questionShortnessOfBreath')
+    ChestTightness=req_data.get('questionChestTightness')
+    Coughing=req_data.get('questionCoughing')
     
 
     # Convertir datos en DataFrame para la predicción
@@ -50,15 +51,25 @@ async def add_evaluation_user(request: Request):
     print(params_news_df)
     
     # Realizar predicción
+    start_time = time.time()
     result_model = model_training.predict(params_news_df)
+    end_time = time.time()
+
+    prediction_time = round((end_time - start_time) * 1000, 2)
     
     if result_model[0] == 0:
-        mensaje = "Su evaluación indica un bajo riesgo de desarrollar crisis asmatica."
+        mensaje = "Su evaluación indica una baja probabilidad de crisis asmatica."
     else:
-        mensaje = "Su evaluación indica un alto riesgo de desarrollar crisis asmatica."
+        mensaje = "Su evaluación indica una alta probabilidad de crisis asmatica."
     
     print(result_model[0])
-    return JSONResponse(content={'AsthmaDiagnosis': str(result_model), "message": mensaje})
+    print("Tiempo de predicción:", prediction_time, "ms")
+    return JSONResponse(
+        content={'AsthmaDiagnosis': 
+                 str(result_model), 
+                 "message": mensaje, 
+                 'prediction_time_ms': prediction_time 
+                 })
 
 if __name__=="__main__":
     import uvicorn
