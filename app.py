@@ -3,9 +3,13 @@ import os
 import pandas as pd
 import numpy as np
 import time
+import pytz
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
+
+tz = pytz.timezone('America/Lima')
 
 app=FastAPI()
 
@@ -55,7 +59,22 @@ async def add_evaluation_user(request: Request):
     result_model = model_training.predict(params_news_df)
     end_time = time.time()
 
-    prediction_time = round((end_time - start_time) * 1000, 2)
+    #prediction_time = round((end_time - start_time) * 1000, 2)
+
+    start_time_dt = datetime.fromtimestamp(start_time, tz)
+    end_time_dt = datetime.fromtimestamp(end_time, tz)
+
+    start_time_str = start_time_dt.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    end_time_str = end_time_dt.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+
+    fmt = '%Y-%m-%d %H:%M:%S.%f'
+
+    start_dt = datetime.strptime(start_time_str, fmt)
+    end_dt = datetime.strptime(end_time_str, fmt)
+
+    diff_ms_from_str = round((end_dt - start_dt).total_seconds() * 1000, 2)
+
+    print(end_time - start_time)
     
     if result_model[0] == 0:
         mensaje = "Su evaluación indica una baja probabilidad de crisis asmatica."
@@ -63,12 +82,14 @@ async def add_evaluation_user(request: Request):
         mensaje = "Su evaluación indica una alta probabilidad de crisis asmatica."
     
     print(result_model[0])
-    print("Tiempo de predicción:", prediction_time, "ms")
+    print("Tiempo de predicción:", diff_ms_from_str, "ms")
     return JSONResponse(
         content={'AsthmaDiagnosis': 
                  str(result_model), 
                  "message": mensaje, 
-                 'prediction_time_ms': prediction_time 
+                 'prediction_time_ms': diff_ms_from_str,
+                 'start_time': start_time_str,
+                 'end_time': end_time_str
                  })
 
 if __name__=="__main__":
