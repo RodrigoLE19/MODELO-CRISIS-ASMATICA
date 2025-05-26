@@ -25,7 +25,7 @@ app.add_middleware(
 # Obtén la ruta del directorio del archivo actual
 current_dir = os.path.dirname(__file__)
 
-model_ml_asma = os.path.join(current_dir, 'models', 'asma_model.pkl')
+model_ml_asma = os.path.join(current_dir, 'models', 'asma_model_dos.pkl')
 
 with open(model_ml_asma, 'rb') as file:
     model_training = pickle.load(file)
